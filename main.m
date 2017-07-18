@@ -1,0 +1,344 @@
+function varargout = main(varargin)
+% MAIN MATLAB code for main.fig
+%      MAIN, by itself, creates a new MAIN or raises the existing
+%      singleton*.
+%
+%      H = MAIN returns the handle to a new MAIN or the handle to
+%      the existing singleton*.
+%
+%      MAIN('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MAIN.M with the given input arguments.
+%
+%      MAIN('Property','Value',...) creates a new MAIN or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before main_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to main_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help main
+
+% Last Modified by GUIDE v2.5 18-Jul-2017 01:48:42
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @main_OpeningFcn, ...
+                   'gui_OutputFcn',  @main_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before main is made visible.
+function main_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to main (see VARARGIN)
+
+% Choose default command line output for main
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes main wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = main_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% --- Executes on button press in testbutton.
+function testbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to testbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(handles.status, 'string', 'Status: Testing...');
+drawnow();
+% Load data test
+testImages = loadMNISTImages('./data/t10k-images.idx3-ubyte');
+testLabels = loadMNISTLabels('./data/t10k-labels.idx1-ubyte');
+ 
+% get so luong data test
+nTotalDataTest = size(testLabels, 1);
+
+
+
+%Load saved model
+switch get(handles.algorithm, 'Value')
+    case 1
+        %save model
+        switch get(handles.feature, 'Value')
+            case 1
+                if exist('model/knn/raw/knn_raw.mat')
+                    % load pretrained model
+                    load('model/knn/raw/knn_raw.mat');
+                    featuresTest = testImages;
+                else
+                    error('Please train before test');
+                end
+            case 2
+                if exist('model/knn/hog/knn_hog.mat')
+                    % load pretrained model
+                    load('model/knn/hog/knn_hog.mat');
+                    img1D = testImages(:,1);
+                    img2D = reshape(img1D, 28, 28);
+                    feature = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+                    nSizeOfFeature = length(feature);
+                    featuresTest = zeros(nSizeOfFeature, nTotalDataTest);
+                    for i = 1:nTotalDataTest
+                        img1D = testImages(:, i);
+                        img2D = reshape(img1D, 28, 28);
+                        featuresTest(:, i) = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+                    end
+                else
+                    error('Please train before test');
+                end
+            case 3
+                if exist('model/knn/lbp/knn_lbp.mat')
+                    % load pretrained model
+                    load('model/knn/lbp/knn_lbp.mat');
+                     %trich xuat feature test
+                    img1D = testImages(:,1);
+                    img2D = reshape(img1D, 28, 28);
+                    feature = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+                    nSizeOfFeature = length(feature);
+                    featuresTest = zeros(nSizeOfFeature, nTotalDataTest);
+
+                    for i = 1:nTotalDataTest
+                        img1D = testImages(:, i);
+                        img2D = reshape(img1D, 28, 28);
+                        featuresTest(:, i) = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+                    end
+                else
+                    error('Please train before test');
+                end
+        end
+        %danh gia
+        resultLabels = predict(Mdl, featuresTest');
+    case 2
+        %save model
+        switch get(handles.feature, 'Value')
+            case 1
+                if exist('model/svm/raw/svm_raw.mat')
+                    % load pretrained model
+                    load('model/svm/raw/svm_raw.mat');
+                    featuresTest = testImages;
+                else
+                    error('Please train before test');
+                end
+            case 2
+                if exist('model/svm/hog/svm_hog.mat')
+                    % load pretrained model
+                    load('model/svm/hog/svm_hog.mat');
+                    img1D = testImages(:,1);
+                    img2D = reshape(img1D, 28, 28);
+                    feature = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+                    nSizeOfFeature = length(feature);
+                    featuresTest = zeros(nSizeOfFeature, nTotalDataTest);
+                    for i = 1:nTotalDataTest
+                        img1D = testImages(:, i);
+                        img2D = reshape(img1D, 28, 28);
+                        featuresTest(:, i) = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+                    end
+                else
+                    error('Please train before test');
+                end
+            case 3
+                if exist('model/svm/lbp/svm_lbp.mat')
+                    % load pretrained model
+                    load('model/svm/lbp/svm_lbp.mat');
+                    %trich xuat feature test
+                    img1D = testImages(:,1);
+                    img2D = reshape(img1D, 28, 28);
+                    feature = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+                    nSizeOfFeature = length(feature);
+                    featuresTest = zeros(nSizeOfFeature, nTotalDataTest);
+
+                    for i = 1:nTotalDataTest
+                        img1D = testImages(:, i);
+                        img2D = reshape(img1D, 28, 28);
+                        featuresTest(:, i) = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+                    end
+                else
+                    error('Please train before test');
+                end
+        end
+        %danh gia
+        resultLabels = predict(Mdl, featuresTest');
+end
+
+
+rightPredict = sum(resultLabels == testLabels);
+rightPredictRate = (rightPredict/nTotalDataTest)*100;
+
+set(handles.status, 'string', 'Status: Test successfully');
+set(handles.resulttext, 'string', ['Accurate rate: ', num2str(rightPredictRate), '%']);
+
+
+% --- Executes on selection change in feature.
+function feature_Callback(hObject, eventdata, handles)
+% hObject    handle to feature (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns feature contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from feature
+
+
+% --- Executes during object creation, after setting all properties.
+function feature_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to feature (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in algorithm.
+function algorithm_Callback(hObject, eventdata, handles)
+% hObject    handle to algorithm (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns algorithm contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from algorithm
+
+
+% --- Executes during object creation, after setting all properties.
+function algorithm_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to algorithm (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in trainbutton.
+function trainbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to trainbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.status, 'string', 'Status: Training...');
+drawnow();
+
+% Load data train
+trainImages = loadMNISTImages('./data/train-images.idx3-ubyte');
+trainLabels = loadMNISTLabels('./data/train-labels.idx1-ubyte');
+
+%Get so luong anh data train
+nTotalDataTrain = size(trainLabels, 1);
+
+% Get thong so feature da lua chon de xu li
+chosenFeature = get(handles.feature, 'Value');
+switch chosenFeature
+    case 1 % raw
+        featuresTrain = trainImages;
+    case 2 % HOG
+        %trich xuat feature train
+        img1D = trainImages(:,1);
+        img2D = reshape(img1D, 28, 28);
+        feature = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+        nSizeOfFeature = length(feature);
+        featuresTrain = zeros(nSizeOfFeature, nTotalDataTrain);
+
+        for i = 1:nTotalDataTrain
+            img1D = trainImages(:, i);
+            img2D = reshape(img1D, 28, 28);
+            featuresTrain(:, i) = extractHOGFeatures(img2D, 'CellSize', [8 8]);
+        end
+    case 3 %LBP
+        %trich xuat feature train
+        img1D = trainImages(:,1);
+        img2D = reshape(img1D, 28, 28);
+        feature = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+        nSizeOfFeature = length(feature);
+        featuresTrain = zeros(nSizeOfFeature, nTotalDataTrain);
+
+        for i = 1:nTotalDataTrain
+            img1D = trainImages(:, i);
+            img2D = reshape(img1D, 28, 28);
+            featuresTrain(:, i) = extractLBPFeatures(img2D, 'NumNeighbors', 8, 'Radius', 4);
+        end    
+end
+        
+
+% Get thong so algorithm da lua chon de xay dung model
+switch get(handles.algorithm, 'Value')
+    case 1
+        %save model
+        switch chosenFeature
+            case 1
+                if exist('model/knn/raw/knn_raw.mat') == 0
+                    Mdl = fitcknn(featuresTrain', trainLabels);
+                    save('model/knn/raw/knn_raw.mat', 'Mdl');
+                end
+            case 2
+                if exist('model/knn/hog/knn_hog.mat') == 0
+                    Mdl = fitcknn(featuresTrain', trainLabels);
+                    save('model/knn/hog/knn_hog.mat', 'Mdl');
+                end
+            case 3
+                if exist('model/knn/lbp/knn_lbp.mat') == 0
+                    Mdl = fitcknn(featuresTrain', trainLabels);
+                    save('model/knn/lbp/knn_lbp.mat', 'Mdl');
+                end
+            case 4
+            case 5
+        end
+        
+    case 2
+        %save model
+        switch chosenFeature
+            case 1
+                if exist('model/svm/raw/svm_raw.mat') == 0
+                    Mdl = fitcecoc(featuresTrain', trainLabels);
+                    save('model/svm/raw/svm_raw.mat', 'Mdl');
+                end
+            case 2
+                if exist('model/svm/hog/svm_hog.mat') == 0
+                    Mdl = fitcecoc(featuresTrain', trainLabels);
+                    save('model/svm/hog/svm_hog.mat', 'Mdl');
+                end
+            case 3
+                if exist('model/svm/lbp/svm_lbp.mat') == 0
+                    Mdl = fitcecoc(featuresTrain', trainLabels);
+                    save('model/svm/lbp/svm_lbp.mat', 'Mdl');
+                end
+        end
+end
+set(handles.status, 'string', 'Status: Train sucessfully');
